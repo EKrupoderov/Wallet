@@ -200,6 +200,7 @@ open class WalletView: UIView {
     @IBOutlet public weak var walletHeader: UIView? {
         willSet {
             if let walletHeader = newValue {
+                walletHeaderHeight = walletHeader.frame.height
                 scrollView.addSubview(walletHeader)
             }
         }
@@ -209,11 +210,19 @@ open class WalletView: UIView {
         }
     }
     
+    /** This option allows hiding headerView when we have presented card */
+    public var shouldHideHeaderWhenCardPresented: Bool = true
     
     /** The card view that is presented by this wallet view. */
     public var presentedCardView: CardView? {
         
         didSet {
+            if presentedCardView != nil, shouldHideHeaderWhenCardPresented {
+                walletHeaderHeight = CGFloat(0)
+            } else {
+                walletHeaderHeight = walletHeader?.frame.size.height ?? 0
+            }
+            
             oldValue?.presented = false
             presentedCardView?.presented = true
             didPresentCardViewBlock?(presentedCardView)
@@ -356,6 +365,9 @@ open class WalletView: UIView {
         } else {
             
             presentedCardView = cardView
+
+            calculateLayoutValues(shouldLayoutWalletView: false)
+            
             layoutWalletView(animationDuration: animated ? animationDuration : nil, placeVisibleCardViews: false, completion: { [weak self] (_) in
                 self?.placeVisibleCardViews()
                 completion?(true)
@@ -410,13 +422,14 @@ open class WalletView: UIView {
             
             UIView.animateKeyframes(withDuration: WalletView.removalAnimationSpeed, delay: 0, options: [.calculationModeCubic], animations: {
                 
-                UIView.addKeyframe(withRelativeStartTime: 0.6, relativeDuration: 0.7, animations: {
+                UIView.addKeyframe(withRelativeStartTime: 0.2, relativeDuration: 0.8, animations: {
                     self?.remove(cardViews: [cardView])
                 })
                     
-                UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 0.7, animations: {
+                UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 0.8, animations: {
                 
-                    removalSuperview.frame = removalSuperview.frame.insetBy(dx: 0, dy: removalSuperview.frame.height/2)
+                    removalSuperview.frame = removalSuperview.frame.insetBy(dx: 0, dy: removalSuperview.frame.height/2).offsetBy(dx: 0, dy: -removalSuperview.frame.height/4)
+                    
                     cardView.alpha = 0.0
                     
                     cardView.layoutIfNeeded()
@@ -427,7 +440,7 @@ open class WalletView: UIView {
                 })
                 
                 UIView.addKeyframe(withRelativeStartTime: 0.3, relativeDuration: 0.4, animations: {
-                    overlay.alpha = 1.0
+                    overlay.alpha = 0.7
                     overlay.setNeedsDisplay()
                 })
                 
@@ -522,9 +535,6 @@ open class WalletView: UIView {
     
     func calculateLayoutValues(shouldLayoutWalletView: Bool = true) {
         
-        
-        walletHeaderHeight = walletHeader?.frame.height ?? 0
-        
         cardViewTopInset = scrollView.contentInset.top + walletHeaderHeight
         
         collapsedCardViewStackHeight = (minimalDistanceBetweenCollapsedCardViews * CGFloat(maximimNumberOfCollapsedCardViewsToShow)) + distanceBetweetCollapsedAndPresentedCardViews
@@ -594,8 +604,6 @@ open class WalletView: UIView {
     func updateScrolViewContentSize() {
         
         var contentSize = CGSize(width: frame.width, height: 0)
-        
-        let walletHeaderHeight = walletHeader?.frame.height ?? 0
         
         contentSize.height = (insertedCardViews.last?.frame.maxY ?? walletHeaderHeight) - (maximumCardViewHeight/2)
         
@@ -704,7 +712,7 @@ open class WalletView: UIView {
                 
                 if presentedCardView != cardView || collapsePresentedCardView {
                     
-                    let widthDelta = distanceBetweenCardViews * CGFloat(collapsedCardViewsCount)
+                    let widthDelta = min(distanceBetweenCardViews, CGFloat(15)) * CGFloat(collapsedCardViewsCount - 1)
                     cardViewFrame.size.width = cardViewFrame.size.width - widthDelta
                     cardViewFrame.origin.x += widthDelta/2
                     
