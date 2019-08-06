@@ -249,6 +249,8 @@ open class WalletView: UIView {
     public typealias InsertionCompletion                = () -> ()
     public typealias RemovalCompletion                  = () -> ()
     
+    public typealias WalletViewInteractionBlock         = () -> ()
+    
     /**
      Informs the observing object when the value at the specified key path relative to the observed object has changed.
      

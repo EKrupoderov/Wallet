@@ -50,6 +50,9 @@ open class CardView: UIView {
     /** This block is called to determine if a card view can be panned. */
     public var cardViewCanReleaseBlock: WalletView.CardViewShouldAllowBlock?
     
+    /** This block is called when user interact with view. */
+    public var cardInteractionBlock: WalletView.WalletViewInteractionBlock?
+    
     private var calledCardViewBeganPanBlock = true
     /** This block is called when a card view began panning. */
     public var cardViewBeganPanBlock: WalletView.CardViewBeganPanBlock?
@@ -138,6 +141,7 @@ extension CardView: UIGestureRecognizerDelegate {
      */
     open override func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
         
+        cardInteractionBlock?()
         
         if gestureRecognizer == panGestureRecognizer {
             let cardViewCanPan = cardViewCanPanBlock?() ?? true
